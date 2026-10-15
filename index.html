@@ -1,0 +1,375 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#FDF1F5">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🐱</text></svg>">
+<title>Freakies Trip Tracker</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&family=Nunito:wght@400;600;700;800&display=swap">
+<style>
+body{margin:0}
+:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+img{max-width:100%}[hidden]{display:none!important}
+/* Layout: one narrow phone-first column — rate chip, three girl cards, settle-up, add form, ledger table */
+:root{
+  --bg:#FDF1F5; --card:#FFFFFF; --ink:#3A1E36; --muted:#8C6A85; --line:#F1D6E2;
+  --accent:#E8467C; --accent-ink:#FFFFFF; --soft:#FCE4EE;
+  --pels:#EC5C9A; --pels-bg:#FDE3EF;
+  --hanting:#E99A1F; --hanting-bg:#FFF0D6;
+  --shanice:#1FA89B; --shanice-bg:#DAF4F1;
+  --good:#1E9B63; --good-bg:#DDF5E8; --owe:#D2445B; --owe-bg:#FDE2E6;
+  --shadow:0 2px 0 #EBC9D8;
+  --display:"Fredoka","Baloo 2","Trebuchet MS",system-ui,sans-serif;
+  --body:"Nunito",system-ui,-apple-system,"Segoe UI",sans-serif;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#211420; --card:#2D1B2B; --ink:#FBEAF3; --muted:#C7A3BC; --line:#47293F;
+  --accent:#FF6E9D; --accent-ink:#2A0E1C; --soft:#3A2136;
+  --pels:#FF7FB3; --pels-bg:#4A2238; --hanting:#FFBC55; --hanting-bg:#47341A;
+  --shanice:#4ED3C5; --shanice-bg:#173F3B;
+  --good:#5CD69A; --good-bg:#183A2A; --owe:#FF7A8E; --owe-bg:#4A1E27; --shadow:0 2px 0 #170C16; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#211420; --card:#2D1B2B; --ink:#FBEAF3; --muted:#C7A3BC; --line:#47293F;
+  --accent:#FF6E9D; --accent-ink:#2A0E1C; --soft:#3A2136;
+  --pels:#FF7FB3; --pels-bg:#4A2238; --hanting:#FFBC55; --hanting-bg:#47341A;
+  --shanice:#4ED3C5; --shanice-bg:#173F3B;
+  --good:#5CD69A; --good-bg:#183A2A; --owe:#FF7A8E; --owe-bg:#4A1E27; --shadow:0 2px 0 #170C16; color-scheme:dark}
+
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font-family:var(--body);font-size:15px;line-height:1.45;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:20px 48px;
+  background-image:radial-gradient(var(--line) 1.2px,transparent 1.3px);background-size:22px 22px}
+.wrap{max-width:760px;margin:0 auto;display:flex;flex-direction:column;gap:18px}
+h1,h2{font-family:var(--display);margin:0;text-wrap:balance;letter-spacing:.2px}
+h1{font-size:clamp(30px,8vw,44px);line-height:1.02;font-weight:700}
+h1 .flower{color:var(--accent);display:inline-block;transform:translateY(-3px)}
+h2{font-size:20px;font-weight:600}
+.eyebrow{font-size:12px;text-transform:uppercase;letter-spacing:1.4px;font-weight:800;color:var(--accent)}
+.num{font-variant-numeric:tabular-nums}
+header{display:flex;flex-direction:column;gap:10px}
+.toprow{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.chip{display:inline-flex;align-items:center;gap:6px;background:var(--card);border:2px solid var(--line);border-radius:999px;padding:6px 12px;font-weight:700;font-size:13px}
+.chip input{width:64px;border:none;background:var(--soft);color:var(--ink);border-radius:8px;padding:3px 6px;font:inherit;text-align:right}
+.seg{display:inline-flex;background:var(--card);border:2px solid var(--line);border-radius:999px;padding:3px}
+.seg button{border:none;background:transparent;color:var(--muted);font:700 13px var(--body);padding:5px 12px;border-radius:999px;cursor:pointer}
+.seg button[aria-pressed="true"]{background:var(--accent);color:var(--accent-ink)}
+.sync{font-size:12px;color:var(--muted)}
+
+.panel{background:var(--card);border:2px solid var(--line);border-radius:22px;padding:16px;box-shadow:var(--shadow)}
+.total{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:baseline;gap:6px}
+.total .big{font-family:var(--display);font-size:34px;font-weight:700}
+.total .sub{color:var(--muted);font-weight:600}
+
+.girls{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
+@media (max-width:560px){.girls{grid-template-columns:1fr}}
+.girl{border-radius:20px;padding:14px;background:var(--gbg);border:2px solid var(--gc);display:flex;flex-direction:column;gap:6px;min-width:0}
+.hero{display:flex;flex-wrap:wrap;align-items:flex-end;justify-content:space-between;gap:10px}
+.kitties{display:flex;gap:2px}
+.kit{width:64px;height:64px;max-width:100%}
+.kit.k-hanting{transform:translateY(-6px) rotate(-4deg)}
+.kit.k-shanice{transform:rotate(5deg)}
+.k-pels{--fur:#FFFFFF;--belly:#FDE3EF;--ear:#F7A1BE;--bow:var(--pels)}
+.k-hanting{--fur:#F6B868;--belly:#FFF0D6;--ear:#F7A1BE;--bow:var(--hanting)}
+.k-shanice{--fur:#9A9AA8;--belly:#E9E9EF;--ear:#F7A1BE;--bow:var(--shanice)}
+.k-pels{filter:drop-shadow(0 1px 0 #EBC9D8)}
+.girl{position:relative;overflow:hidden}
+.girl .kit{position:absolute;right:-6px;bottom:-8px;width:78px;height:78px;opacity:.95}
+.girl .row,.girl .pill{position:relative;z-index:1}
+.girl .row{margin-right:58px}
+.empty-kit{width:72px;height:72px;display:block;margin:4px auto 0}
+.girl .name{display:flex;align-items:center;gap:8px;font-family:var(--display);font-size:20px;font-weight:600;color:var(--ink)}
+.dot{width:26px;height:26px;border-radius:50%;background:var(--gc);color:#fff;display:grid;place-items:center;font:700 13px var(--display);flex:none}
+.girl .row{display:flex;justify-content:space-between;gap:8px;font-size:13.5px}
+.girl .row span:first-child{color:var(--muted);font-weight:600}
+.girl .row b{font-weight:800}
+.pill{align-self:flex-start;border-radius:999px;padding:3px 10px;font-weight:800;font-size:12.5px}
+.pill.get{background:var(--good-bg);color:var(--good)}
+.pill.owe{background:var(--owe-bg);color:var(--owe)}
+.pill.even{background:var(--card);color:var(--muted)}
+.p-pels{--gc:var(--pels);--gbg:var(--pels-bg)} .p-hanting{--gc:var(--hanting);--gbg:var(--hanting-bg)} .p-shanice{--gc:var(--shanice);--gbg:var(--shanice-bg)}
+
+.settle ul{list-style:none;margin:10px 0 0;padding:0;display:flex;flex-direction:column;gap:8px}
+.settle li{display:flex;flex-wrap:wrap;align-items:center;gap:8px;background:var(--soft);border-radius:14px;padding:10px 12px;font-weight:700}
+.settle li .amt{margin-left:auto;font-family:var(--display);font-size:18px}
+.arrow{color:var(--muted)}
+.empty{color:var(--muted);font-weight:600;margin:8px 0 0}
+
+form{display:grid;gap:12px}
+.f2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+@media (max-width:440px){.f2{grid-template-columns:1fr}}
+label.lbl{display:flex;flex-direction:column;gap:5px;font-size:12px;font-weight:800;text-transform:uppercase;letter-spacing:.8px;color:var(--muted);min-width:0}
+input[type=text],input[type=number],input[type=date]{width:100%;font:600 16px var(--body);color:var(--ink);background:var(--bg);border:2px solid var(--line);border-radius:14px;padding:10px 12px}
+input:focus-visible,button:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+.amtrow{display:flex;gap:8px}
+.amtrow input{flex:1;min-width:0}
+.pickers{display:flex;flex-wrap:wrap;gap:8px}
+.pick{border:2px solid var(--gc);background:var(--card);color:var(--ink);border-radius:999px;padding:7px 14px;font:700 14px var(--body);cursor:pointer;display:inline-flex;align-items:center;gap:6px}
+.pick[aria-pressed="true"]{background:var(--gc);color:#fff}
+.pick.cur{--gc:var(--accent)}
+.btn{border:none;background:var(--accent);color:var(--accent-ink);font:600 17px var(--display);padding:12px 18px;border-radius:16px;cursor:pointer;box-shadow:0 3px 0 color-mix(in srgb,var(--accent) 60%,#000)}
+.btn:active{transform:translateY(2px);box-shadow:none}
+.hint{font-size:12.5px;color:var(--muted);margin:0}
+.err{color:var(--owe);font-weight:700;font-size:13px;margin:0}
+
+.tablewrap{overflow-x:auto;margin:10px -4px 0}
+table{width:100%;border-collapse:collapse;min-width:520px;font-size:14px}
+th{font:600 13px var(--display);text-align:right;padding:8px 6px;border-bottom:2px solid var(--line);white-space:nowrap}
+th:first-child,td:first-child{text-align:left}
+th.c-pels{color:var(--pels)} th.c-hanting{color:var(--hanting)} th.c-shanice{color:var(--shanice)}
+td{padding:9px 6px;border-bottom:1px dashed var(--line);text-align:right;vertical-align:top}
+td .item{font-weight:700}
+td .meta{font-size:12px;color:var(--muted)}
+td .orig{display:block;font-size:11.5px;color:var(--muted)}
+tfoot td{font-weight:800;border-bottom:none;border-top:2px solid var(--line);font-family:var(--display);font-size:15px}
+.del{border:none;background:transparent;color:var(--muted);cursor:pointer;font:700 12px var(--body);padding:2px 4px;border-radius:6px}
+.del:hover{color:var(--owe)}
+.del.confirm{background:var(--owe-bg);color:var(--owe)}
+.tabempty{padding:22px 6px;text-align:center;color:var(--muted);font-weight:600}
+@media (prefers-reduced-motion:no-preference){.girl,.panel{transition:transform .15s} .pick{transition:background .12s}}
+</style>
+</head>
+<body>
+
+
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <symbol id="kitten" viewBox="0 0 120 120">
+    <path d="M88 98c16 2 24-10 20-22-2-6-8-6-8 0 0 8-6 13-14 12" fill="none" stroke="var(--fur)" stroke-width="9" stroke-linecap="round"/>
+    <ellipse cx="60" cy="90" rx="30" ry="24" fill="var(--fur)"/>
+    <ellipse cx="60" cy="95" rx="16" ry="14" fill="var(--belly)"/>
+    <ellipse cx="46" cy="111" rx="9" ry="6" fill="var(--fur)"/>
+    <ellipse cx="74" cy="111" rx="9" ry="6" fill="var(--fur)"/>
+    <path d="M26 46 L30 10 L52 30 Z" fill="var(--fur)"/>
+    <path d="M94 46 L90 10 L68 30 Z" fill="var(--fur)"/>
+    <path d="M33 36 L35 20 L45 30 Z" fill="var(--ear)"/>
+    <path d="M87 36 L85 20 L75 30 Z" fill="var(--ear)"/>
+    <ellipse cx="60" cy="50" rx="36" ry="30" fill="var(--fur)"/>
+    <ellipse cx="46" cy="50" rx="5" ry="6.5" fill="#3A1E36"/>
+    <ellipse cx="74" cy="50" rx="5" ry="6.5" fill="#3A1E36"/>
+    <circle cx="47.8" cy="47.5" r="1.8" fill="#FFFFFF"/>
+    <circle cx="75.8" cy="47.5" r="1.8" fill="#FFFFFF"/>
+    <ellipse cx="38" cy="61" rx="6" ry="3.5" fill="#F7A1BE" opacity=".8"/>
+    <ellipse cx="82" cy="61" rx="6" ry="3.5" fill="#F7A1BE" opacity=".8"/>
+    <path d="M57 58 h6 l-3 3.5 Z" fill="#E8467C"/>
+    <path d="M60 61.5 q-3 4 -6 2 M60 61.5 q3 4 6 2" fill="none" stroke="#3A1E36" stroke-width="1.6" stroke-linecap="round"/>
+    <path d="M30 56 h-14 M30 61 l-13 3 M90 56 h14 M90 61 l13 3" stroke="#3A1E36" stroke-width="1.4" stroke-linecap="round" opacity=".55"/>
+    <path d="M86 22 l6 -4 l0 8 Z M98 18 l-6 4 l6 4 Z" fill="var(--bow)"/>
+    <circle cx="92" cy="22" r="2.6" fill="var(--bow)"/>
+  </symbol>
+</svg>
+
+<div class="wrap">
+  <header>
+    <span class="eyebrow">First ever Freakies trip · Thailand</span>
+    <div class="hero">
+      <h1>Freakies Trip Tracker <span class="flower" aria-hidden="true">✿</span></h1>
+      <div class="kitties" aria-hidden="true">
+        <svg class="kit k-pels"><use href="#kitten"/></svg>
+        <svg class="kit k-hanting"><use href="#kitten"/></svg>
+        <svg class="kit k-shanice"><use href="#kitten"/></svg>
+      </div>
+    </div>
+    <div class="toprow">
+      <label class="chip" for="rate">1 SGD = <input id="rate" class="num" type="number" step="0.01" min="1" inputmode="decimal"> THB</label>
+      <div class="seg" role="group" aria-label="Show totals in">
+        <button type="button" id="showSGD" aria-pressed="true">SGD</button>
+        <button type="button" id="showTHB" aria-pressed="false">THB</button>
+      </div>
+      <span class="sync" id="sync">Connecting…</span>
+    </div>
+  </header>
+
+  <section class="panel total">
+    <div>
+      <div class="eyebrow">Total spent</div>
+      <div class="big num" id="grand">S$0.00</div>
+    </div>
+    <div class="sub num" id="grandAlt">฿0</div>
+  </section>
+
+  <section class="girls" id="girls"></section>
+
+  <section class="panel settle">
+    <h2>Settle up</h2>
+    <ul id="settle"></ul>
+  </section>
+
+  <section class="panel">
+    <h2>Add a spend</h2>
+    <form id="form" style="margin-top:12px" novalidate>
+      <label class="lbl" for="what">What was it?
+        <input id="what" type="text" placeholder="Mango sticky rice, Grab to Siam…" autocomplete="off">
+      </label>
+      <div class="f2">
+        <label class="lbl" for="amount">Amount
+          <div class="amtrow">
+            <input id="amount" class="num" type="number" step="0.01" min="0" inputmode="decimal" placeholder="0.00">
+            <div class="seg" role="group" aria-label="Currency">
+              <button type="button" id="curTHB" aria-pressed="true">฿ THB</button>
+              <button type="button" id="curSGD" aria-pressed="false">S$ SGD</button>
+            </div>
+          </div>
+        </label>
+        <label class="lbl" for="date">Date
+          <input id="date" type="date">
+        </label>
+      </div>
+      <div class="lbl">Who paid?
+        <div class="pickers" id="payer"></div>
+      </div>
+      <div class="lbl">Split between
+        <div class="pickers" id="split"></div>
+      </div>
+      <p class="hint" id="preview"></p>
+      <p class="err" id="err" hidden></p>
+      <button class="btn" type="submit">Add spend</button>
+    </form>
+  </section>
+
+  <section class="panel">
+    <h2>Every spend</h2>
+    <div class="tablewrap">
+      <table>
+        <thead><tr>
+          <th>Item</th><th class="c-pels">Pels</th><th class="c-hanting">Hanting</th><th class="c-shanice">Shanice</th><th>Total</th><th aria-label="Remove"></th>
+        </tr></thead>
+        <tbody id="rows"></tbody>
+        <tfoot><tr id="foot"></tr></tfoot>
+      </table>
+    </div>
+  </section>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
+<script>
+
+const GIRLS=[{id:"pels",name:"Pels"},{id:"hanting",name:"Hanting"},{id:"shanice",name:"Shanice"}];
+const DEFAULT_RATE=26.16; // mid-market 1 SGD → THB, 16 Oct 2026
+let state={rate:DEFAULT_RATE,expenses:[]};
+let show="SGD", cur="THB", payer=null, split=new Set(GIRLS.map(g=>g.id));
+let sb=null, pendingDel=null;
+const SUPABASE_URL="https://fpqnjuuqayvfdrohxisu.supabase.co";
+const SUPABASE_KEY="sb_publishable_NXdx9ZMv2xFuN-AmuO4cKg_BDa_GIuz";
+const $=id=>document.getElementById(id);
+
+
+const toSGD=e=>e.currency==="SGD"?e.amount:e.amount/state.rate;
+const fmtS=v=>"S$"+v.toLocaleString("en-SG",{minimumFractionDigits:2,maximumFractionDigits:2});
+const fmtB=v=>"฿"+Math.round(v).toLocaleString("en-SG");
+const fmt=sgd=>show==="SGD"?fmtS(sgd):fmtB(sgd*state.rate);
+const fmtAlt=sgd=>show==="SGD"?fmtB(sgd*state.rate):fmtS(sgd);
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+
+function compute(){
+  const paid={},share={};GIRLS.forEach(g=>{paid[g.id]=0;share[g.id]=0});
+  let total=0;
+  for(const e of state.expenses){
+    const s=toSGD(e); total+=s;
+    if(paid[e.payer]!==undefined) paid[e.payer]+=s;
+    const who=(e.split&&e.split.length?e.split:GIRLS.map(g=>g.id)).filter(id=>share[id]!==undefined);
+    who.forEach(id=>share[id]+=s/who.length);
+  }
+  const bal={};GIRLS.forEach(g=>bal[g.id]=paid[g.id]-share[g.id]);
+  return {paid,share,bal,total};
+}
+function settle(bal){
+  const cred=[],debt=[];
+  GIRLS.forEach(g=>{const b=Math.round(bal[g.id]*100)/100;if(b>0.004)cred.push({id:g.id,v:b});else if(b<-0.004)debt.push({id:g.id,v:-b});});
+  cred.sort((a,b)=>b.v-a.v);debt.sort((a,b)=>b.v-a.v);
+  const out=[];let i=0,j=0;
+  while(i<debt.length&&j<cred.length){const x=Math.min(debt[i].v,cred[j].v);out.push({from:debt[i].id,to:cred[j].id,v:x});
+    debt[i].v-=x;cred[j].v-=x;if(debt[i].v<0.005)i++;if(cred[j].v<0.005)j++;}
+  return out;
+}
+const nameOf=id=>(GIRLS.find(g=>g.id===id)||{name:id}).name;
+
+function render(){
+  const {paid,share,bal,total}=compute();
+  if(document.activeElement!==$("rate")) $("rate").value=state.rate;
+  $("grand").textContent=fmt(total); $("grandAlt").textContent=fmtAlt(total)+(show==="SGD"?" in baht":" in SGD");
+  $("girls").innerHTML=GIRLS.map(g=>{
+    const b=bal[g.id];const pill=Math.abs(b)<0.005?'<span class="pill even">All square</span>':b>0?`<span class="pill get">Gets back ${fmt(b)}</span>`:`<span class="pill owe">Owes ${fmt(-b)}</span>`;
+    return `<article class="girl p-${g.id}"><svg class="kit k-${g.id}" aria-hidden="true"><use href="#kitten"/></svg><div class="name"><span class="dot">${g.name[0]}</span>${g.name}</div>
+      <div class="row"><span>Paid out</span><b class="num">${fmt(paid[g.id])}</b></div>
+      <div class="row"><span>Her share</span><b class="num">${fmt(share[g.id])}</b></div>${pill}</article>`}).join("");
+  const s=settle(bal);
+  $("settle").innerHTML=s.length?s.map(t=>`<li><span>${nameOf(t.from)}</span><span class="arrow">pays</span><span>${nameOf(t.to)}</span><span class="amt num">${fmt(t.v)}</span></li>`).join("")
+    :`<p class="empty">${state.expenses.length?"Everyone is square. Cute.":"Nothing to settle yet. Add the first spend below."}</p>`;
+  const sorted=[...state.expenses].sort((a,b)=>(b.date||"").localeCompare(a.date||"")||(b.at||0)-(a.at||0));
+  $("rows").innerHTML=sorted.length?sorted.map(e=>{
+    const s=toSGD(e);const orig=e.currency==="THB"?fmtB(e.amount):fmtS(e.amount);
+    const splitTxt=(e.split&&e.split.length&&e.split.length<GIRLS.length)?" · split: "+e.split.map(nameOf).join(", "):"";
+    const cells=GIRLS.map(g=>g.id===e.payer?`<td class="num"><b>${fmt(s)}</b>${(e.currency!==show)?`<span class="orig">${orig}</span>`:""}</td>`:`<td></td>`).join("");
+    return `<tr><td><div class="item">${esc(e.what)}</div><div class="meta">${e.date?new Date(e.date+"T00:00").toLocaleDateString("en-SG",{day:"numeric",month:"short"}):""}${splitTxt}</div></td>${cells}
+      <td class="num">${fmt(s)}</td><td><button class="del${pendingDel===e.id?" confirm":""}" data-id="${e.id}" type="button">${pendingDel===e.id?"Sure?":"✕"}</button></td></tr>`}).join("")
+    :`<tr><td colspan="6" class="tabempty"><svg class="empty-kit k-hanting" aria-hidden="true"><use href="#kitten"/></svg>No spends yet. The first mango smoothie goes here.</td></tr>`;
+  $("foot").innerHTML=`<td>Total</td>${GIRLS.map(g=>`<td class="num">${fmt(paid[g.id])}</td>`).join("")}<td class="num">${fmt(total)}</td><td></td>`;
+  $("showSGD").setAttribute("aria-pressed",show==="SGD");$("showTHB").setAttribute("aria-pressed",show==="THB");
+  renderForm();
+}
+function renderForm(){
+  $("payer").innerHTML=GIRLS.map(g=>`<button type="button" class="pick p-${g.id}" data-id="${g.id}" aria-pressed="${payer===g.id}">${g.name}</button>`).join("");
+  $("split").innerHTML=GIRLS.map(g=>`<button type="button" class="pick p-${g.id}" data-id="${g.id}" aria-pressed="${split.has(g.id)}">${g.name}</button>`).join("");
+  $("curTHB").setAttribute("aria-pressed",cur==="THB");$("curSGD").setAttribute("aria-pressed",cur==="SGD");
+  const a=parseFloat($("amount").value);
+  if(a>0&&split.size){const sgd=cur==="SGD"?a:a/state.rate;
+    $("preview").textContent=`= ${fmtS(sgd)} / ${fmtB(sgd*state.rate)} · ${fmtS(sgd/split.size)} each for ${split.size}`;}
+  else $("preview").textContent="";
+}
+
+$("payer").onclick=e=>{const b=e.target.closest("button");if(!b)return;payer=b.dataset.id;renderForm();};
+$("split").onclick=e=>{const b=e.target.closest("button");if(!b)return;const id=b.dataset.id;split.has(id)?split.delete(id):split.add(id);renderForm();};
+$("curTHB").onclick=()=>{cur="THB";renderForm()};$("curSGD").onclick=()=>{cur="SGD";renderForm()};
+$("amount").oninput=renderForm;
+$("showSGD").onclick=()=>{show="SGD";render()};$("showTHB").onclick=()=>{show="THB";render()};
+let rateT;
+$("rate").oninput=()=>{const r=parseFloat($("rate").value);if(!(r>0))return;state.rate=r;render();clearTimeout(rateT);
+  rateT=setTimeout(async()=>{if(!sb)return;const {error}=await sb.from("settings").update({rate:r}).eq("id",1);if(error)setSync("Couldn't save the rate. Check your connection.");},700);};
+
+$("form").onsubmit=async ev=>{
+  ev.preventDefault();const err=$("err");
+  const what=$("what").value.trim(),amount=parseFloat($("amount").value);
+  const msg=!what?"Add what it was for.":!(amount>0)?"Enter an amount above 0.":!payer?"Tap who paid.":!split.size?"Pick at least one Freakie to split with.":"";
+  if(msg){err.textContent=msg;err.hidden=false;return;}err.hidden=true;
+  const e={id:"e"+Date.now().toString(36)+Math.random().toString(36).slice(2,6),what,amount:Math.round(amount*100)/100,currency:cur,payer,
+    split:GIRLS.map(g=>g.id).filter(id=>split.has(id)),date:$("date").value||today(),at:Date.now()};
+  if(!sb){err.textContent="Not connected yet. Check your internet and reload.";err.hidden=false;return;}
+  const {error}=await sb.from("expenses").insert(e);
+  if(error){err.textContent="Couldn't save just now. Check your connection and try again.";err.hidden=false;return;}
+  state.expenses.push(e);
+  $("what").value="";$("amount").value="";split=new Set(GIRLS.map(g=>g.id));render();$("what").focus();
+};
+$("rows").onclick=async ev=>{
+  const b=ev.target.closest(".del");if(!b)return;const id=b.dataset.id;
+  if(pendingDel!==id){pendingDel=id;render();setTimeout(()=>{if(pendingDel===id){pendingDel=null;render();}},4000);return;}
+  pendingDel=null;
+  if(!sb)return;
+  const {error}=await sb.from("expenses").delete().eq("id",id);
+  if(error){setSync("Couldn't delete. Try again.");return;}
+  state.expenses=state.expenses.filter(e=>e.id!==id);render();
+};
+function today(){const d=new Date();return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0");}
+
+$("date").value=today();
+render();
+
+function setSync(t){$("sync").textContent=t;}
+async function loadAll(){
+  const [ex,st]=await Promise.all([sb.from("expenses").select("*"),sb.from("settings").select("rate").eq("id",1).maybeSingle()]);
+  if(ex.error){setSync("Offline · can't load spends");return;}
+  state.expenses=ex.data.map(r=>({...r,amount:Number(r.amount),at:Number(r.at)}));
+  if(st.data&&Number(st.data.rate)>0&&document.activeElement!==$("rate"))state.rate=Number(st.data.rate);
+  setSync("Shared with the Freakies · live");render();
+}
+(async()=>{
+  try{sb=window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY);}catch(e){setSync("Couldn't connect. Reload to try again.");return;}
+  await loadAll();
+  let t;const refresh=()=>{clearTimeout(t);t=setTimeout(loadAll,250);};
+  sb.channel("trip").on("postgres_changes",{event:"*",schema:"public",table:"expenses"},refresh)
+    .on("postgres_changes",{event:"*",schema:"public",table:"settings"},refresh).subscribe();
+  document.addEventListener("visibilitychange",()=>{if(!document.hidden)loadAll();});
+})();
+</script>
+</body>
+</html>
