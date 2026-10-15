@@ -123,6 +123,14 @@ td .item{font-weight:700}
 td .meta{font-size:12px;color:var(--muted)}
 td .orig{display:block;font-size:11.5px;color:var(--muted)}
 tfoot td{font-weight:800;border-bottom:none;border-top:2px solid var(--line);font-family:var(--display);font-size:15px}
+.spendhead{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap}
+.resetbtn{border:2px solid var(--line);background:var(--card);color:var(--muted);font:700 13px var(--body);padding:6px 12px;border-radius:999px;cursor:pointer}
+.resetbtn:hover{color:var(--owe);border-color:var(--owe)}
+.resetbox{margin-top:10px;background:var(--owe-bg);border-radius:14px;padding:12px;display:flex;flex-direction:column;gap:10px}
+.resetbox p{margin:0;font-weight:700;color:var(--owe)}
+.resetactions{display:flex;gap:8px;flex-wrap:wrap}
+.resetyes{border:none;background:var(--owe);color:#fff;font:700 14px var(--body);padding:8px 14px;border-radius:12px;cursor:pointer}
+.resetno{border:2px solid var(--line);background:var(--card);color:var(--ink);font:700 14px var(--body);padding:6px 14px;border-radius:12px;cursor:pointer}
 .del{border:none;background:transparent;color:var(--muted);cursor:pointer;font:700 12px var(--body);padding:2px 4px;border-radius:6px}
 .del:hover{color:var(--owe)}
 .del.confirm{background:var(--owe-bg);color:var(--owe)}
@@ -228,7 +236,11 @@ tfoot td{font-weight:800;border-bottom:none;border-top:2px solid var(--line);fon
   </section>
 
   <section class="panel">
-    <h2>Every spend</h2>
+    <div class="spendhead"><h2>Every spend</h2><button type="button" class="resetbtn" id="resetBtn">Reset trip</button></div>
+    <div class="resetbox" id="resetBox" hidden>
+      <p id="resetMsg">Delete every spend for everyone? This can't be undone.</p>
+      <div class="resetactions"><button type="button" class="resetyes" id="resetYes">Yes, delete all</button><button type="button" class="resetno" id="resetNo">Cancel</button></div>
+    </div>
     <div class="tablewrap">
       <table>
         <thead><tr>
@@ -349,6 +361,12 @@ $("rows").onclick=async ev=>{
   if(error){setSync("Couldn't delete. Try again.");return;}
   state.expenses=state.expenses.filter(e=>e.id!==id);render();
 };
+$("resetBtn").onclick=()=>{const n=state.expenses.length;$("resetMsg").textContent=n?`Delete all ${n} spend${n>1?"s":""} for everyone? This can't be undone.`:"There are no spends to clear yet.";$("resetYes").hidden=!n;$("resetBox").hidden=false;};
+$("resetNo").onclick=()=>{$("resetBox").hidden=true;};
+$("resetYes").onclick=async()=>{if(!sb)return;$("resetYes").disabled=true;
+  const {error}=await sb.from("expenses").delete().neq("id","");$("resetYes").disabled=false;
+  if(error){$("resetMsg").textContent="Couldn't reset. Check your connection and try again.";return;}
+  state.expenses=[];$("resetBox").hidden=true;render();};
 function today(){const d=new Date();return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0");}
 
 $("date").value=today();
