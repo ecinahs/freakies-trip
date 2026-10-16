@@ -114,7 +114,7 @@ input:focus-visible,button:focus-visible{outline:3px solid var(--accent);outline
 .err{color:var(--owe);font-weight:700;font-size:13px;margin:0}
 
 .tablewrap{overflow-x:auto;margin:10px -4px 0}
-table{width:100%;border-collapse:collapse;min-width:560px;font-size:14px}
+table{width:100%;border-collapse:collapse;min-width:620px;font-size:14px}
 th{font:600 13px var(--display);text-align:right;padding:8px 6px;border-bottom:2px solid var(--line);white-space:nowrap}
 th:first-child,td:first-child{text-align:left}
 th.c-pels{color:var(--pels)} th.c-hanting{color:var(--hanting)} th.c-shanice{color:var(--shanice)}
@@ -142,8 +142,27 @@ tfoot td{font-weight:800;border-bottom:none;border-top:2px solid var(--line);fon
 .filters button[aria-pressed="true"]{background:var(--ink);border-color:var(--ink);color:var(--bg)}
 .paidbtn{border:2px solid var(--owe);background:var(--owe-bg);color:var(--owe);font:800 12px var(--body);padding:4px 9px;border-radius:999px;cursor:pointer;white-space:nowrap}
 .paidbtn.on{border-color:var(--good);background:var(--good-bg);color:var(--good)}
-tr.isPaid td .item,tr.isPaid td .meta,tr.isPaid td.num{opacity:.55}
-.paidbtn{margin:4px 0}
+tr.isPaid td .item,tr.isPaid td .meta{opacity:.55}
+td .shareamt{display:block;font-weight:700}
+td .paidtag{display:block;font-size:11px;font-weight:800;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin-top:2px}
+.who{display:none;font:600 12.5px var(--display)}
+.c-pels{color:var(--pels)}.c-hanting{color:var(--hanting)}.c-shanice{color:var(--shanice)}
+@media (max-width:600px){
+  .tablewrap{overflow:visible;margin:10px 0 0}
+  table{min-width:0}
+  thead{display:none}
+  tbody tr,tfoot tr{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));column-gap:8px;padding:10px 0;border-bottom:1px dashed var(--line);position:relative}
+  tfoot tr{border-bottom:none;border-top:2px solid var(--line)}
+  tbody td,tfoot td{border:none;padding:3px 0;text-align:left;min-width:0}
+  td:first-child{grid-column:1/-1;min-width:0;padding-right:34px}
+  td.tot{display:none}
+  td.delc{position:absolute;top:8px;right:0;padding:0}
+  .who{display:block}
+  td.tabempty{grid-column:1/-1;text-align:center}
+  tfoot td{font-size:14px}
+}
+td .na{font-size:11.5px;color:var(--muted)}
+.paidbtn{margin-top:4px}
 td:first-child{min-width:150px}
 tr.isPaid .item{text-decoration:line-through;text-decoration-color:var(--muted)}
 .settlenote{margin:6px 0 0;font-size:13px;color:var(--muted);font-weight:600}
@@ -307,11 +326,10 @@ function compute(){
     if(paid[e.payer]!==undefined) paid[e.payer]+=s;
     const who=(e.split&&e.split.length?e.split:GIRLS.map(g=>g.id)).filter(id=>share[id]!==undefined);
     who.forEach(id=>share[id]+=s/who.length);
-    if(!e.paid){
-      if(bal[e.payer]!==undefined) bal[e.payer]+=s;
-      who.forEach(id=>bal[id]-=s/who.length);
-      if(who.some(id=>id!==e.payer)) unpaidN++;
-    }
+    const pb=e.paid_by||[];let open=false;
+    who.forEach(id=>{if(id===e.payer||pb.includes(id))return;open=true;
+      if(bal[e.payer]!==undefined) bal[e.payer]+=s/who.length; bal[id]-=s/who.length;});
+    if(open) unpaidN++;
   }
   return {paid,share,bal,total,byCat,unpaidN};
 }
@@ -324,6 +342,7 @@ function settle(bal){
     debt[i].v-=x;cred[j].v-=x;if(debt[i].v<0.005)i++;if(cred[j].v<0.005)j++;}
   return out;
 }
+const settled=e=>{const who=(e.split&&e.split.length?e.split:GIRLS.map(g=>g.id)).filter(id=>id!==e.payer);return who.length>0&&who.every(id=>(e.paid_by||[]).includes(id));};
 const nameOf=id=>(GIRLS.find(g=>g.id===id)||{name:id}).name;
 
 function render(){
@@ -340,7 +359,7 @@ function render(){
   const s=settle(bal);
   $("settle").innerHTML=s.length?s.map(t=>`<li><span>${nameOf(t.from)}</span><span class="arrow">pays</span><span>${nameOf(t.to)}</span><span class="amt num">${fmt(t.v)}</span></li>`).join("")
     :`<p class="empty">${state.expenses.length?"Everyone is square. Cute.":"Nothing to settle yet. Add the first spend below."}</p>`;
-  $("settleNote").textContent=unpaidN?`Based on ${unpaidN} spend${unpaidN>1?"s":""} not paid back yet. Tap "Not paid" on a spend once it's settled.`:(state.expenses.length?"Every spend has been paid back.":"");
+  $("settleNote").textContent=unpaidN?`Based on ${unpaidN} spend${unpaidN>1?"s":""} not paid back yet. Tap "Not paid" under someone's name once she's paid her share back.`:(state.expenses.length?"Every spend has been paid back.":"");
   $("filters").innerHTML=[{id:"all",name:"All",icon:""},...CATS.filter(c=>byCat[c.id]>0)].map(c=>`<button type="button" data-id="${c.id}" aria-pressed="${filter===c.id}">${c.icon?c.icon+" ":""}${c.name}</button>`).join("");
   if(filter!=="all"&&!(byCat[filter]>0))filter="all";
   const shown=filter==="all"?state.expenses:state.expenses.filter(e=>catOf(e.category).id===filter);
@@ -349,12 +368,17 @@ function render(){
   $("rows").innerHTML=sorted.length?sorted.map(e=>{
     const s=toSGD(e);const orig=e.currency==="THB"?fmtB(e.amount):fmtS(e.amount);
     const splitTxt=(e.split&&e.split.length&&e.split.length<GIRLS.length)?" · split: "+e.split.map(nameOf).join(", "):"";
-    const cells=GIRLS.map(g=>g.id===e.payer?`<td class="num"><b>${fmt(s)}</b>${(e.currency!==show)?`<span class="orig">${orig}</span>`:""}</td>`:`<td></td>`).join("");
+    const who=(e.split&&e.split.length?e.split:GIRLS.map(g=>g.id)),each=s/who.length,pb=e.paid_by||[];
+    const cells=GIRLS.map(g=>{
+      if(g.id===e.payer) return `<td class="num"><span class="who c-${g.id}">${g.name}</span><b>${fmt(s)}</b>${(e.currency!==show)?`<span class="orig">${orig}</span>`:""}<span class="paidtag">paid the bill</span></td>`;
+      if(!who.includes(g.id)) return `<td><span class="who c-${g.id}">${g.name}</span><span class="na">not in</span></td>`;
+      const on=pb.includes(g.id);
+      return `<td class="num"><span class="who c-${g.id}">${g.name}</span><span class="shareamt">${fmt(each)}</span><button type="button" class="paidbtn${on?" on":""}" data-e="${e.id}" data-p="${g.id}" aria-pressed="${on}" aria-label="${g.name} ${on?"paid back":"not paid"}">${on?"Paid ✓":"Not paid"}</button></td>`;}).join("");
     const c=catOf(e.category);
-    return `<tr class="${e.paid?"isPaid":""}"><td><div class="item">${esc(e.what)}</div><button type="button" class="paidbtn${e.paid?" on":""}" data-paid="${e.id}" aria-pressed="${!!e.paid}">${e.paid?"Paid back ✓":"Not paid"}</button><div class="meta"><span class="catchip">${c.icon} ${c.name}</span>${e.date?new Date(e.date+"T00:00").toLocaleDateString("en-SG",{day:"numeric",month:"short"}):""}${splitTxt}</div></td>${cells}
-      <td class="num">${fmt(s)}</td><td><button class="del${pendingDel===e.id?" confirm":""}" data-id="${e.id}" type="button">${pendingDel===e.id?"Sure?":"✕"}</button></td></tr>`}).join("")
+    return `<tr class="${settled(e)?"isPaid":""}"><td><div class="item">${esc(e.what)}</div><div class="meta"><span class="catchip">${c.icon} ${c.name}</span>${e.date?new Date(e.date+"T00:00").toLocaleDateString("en-SG",{day:"numeric",month:"short"}):""}${splitTxt}</div></td>${cells}
+      <td class="num tot">${fmt(s)}</td><td class="delc"><button class="del${pendingDel===e.id?" confirm":""}" data-id="${e.id}" type="button">${pendingDel===e.id?"Sure?":"✕"}</button></td></tr>`}).join("")
     :`<tr><td colspan="6" class="tabempty"><svg class="empty-kit k-hanting" aria-hidden="true"><use href="#kitten"/></svg>No spends yet. The first mango smoothie goes here.</td></tr>`;
-  $("foot").innerHTML=`<td>${filter==="all"?"Total":catOf(filter).name+" total"}</td>${GIRLS.map(g=>`<td class="num">${fmt(fpaid[g.id])}</td>`).join("")}<td class="num">${fmt(ftotal)}</td><td></td>`;
+  $("foot").innerHTML=`<td>${filter==="all"?"Total":catOf(filter).name+" total"}</td>${GIRLS.map(g=>`<td class="num"><span class="who c-${g.id}">${g.name}</span>${fmt(fpaid[g.id])}</td>`).join("")}<td class="num tot">${fmt(ftotal)}</td><td class="delc"></td>`;
   $("showSGD").setAttribute("aria-pressed",show==="SGD");$("showTHB").setAttribute("aria-pressed",show==="THB");
   renderForm();
 }
@@ -386,7 +410,7 @@ $("form").onsubmit=async ev=>{
   const msg=!what?"Add what it was for.":!(amount>0)?"Enter an amount above 0.":!payer?"Tap who paid.":!split.size?"Pick at least one Freakie to split with.":"";
   if(msg){err.textContent=msg;err.hidden=false;return;}err.hidden=true;
   const e={id:"e"+Date.now().toString(36)+Math.random().toString(36).slice(2,6),what,amount:Math.round(amount*100)/100,currency:cur,payer,
-    split:GIRLS.map(g=>g.id).filter(id=>split.has(id)),category:cat,paid:false,date:$("date").value||today(),at:Date.now()};
+    split:GIRLS.map(g=>g.id).filter(id=>split.has(id)),category:cat,paid_by:[],date:$("date").value||today(),at:Date.now()};
   if(!sb){err.textContent="Not connected yet. Check your internet and reload.";err.hidden=false;return;}
   const {error}=await sb.from("expenses").insert(e);
   if(error){err.textContent="Couldn't save just now. Check your connection and try again.";err.hidden=false;return;}
@@ -395,9 +419,10 @@ $("form").onsubmit=async ev=>{
 };
 $("rows").onclick=async ev=>{
   const pb=ev.target.closest(".paidbtn");
-  if(pb){const e=state.expenses.find(x=>x.id===pb.dataset.paid);if(!e||!sb)return;const next=!e.paid;e.paid=next;render();
-    const {error}=await sb.from("expenses").update({paid:next}).eq("id",e.id);
-    if(error){e.paid=!next;render();setSync("Couldn't update. Check your connection.");}
+  if(pb){const e=state.expenses.find(x=>x.id===pb.dataset.e);if(!e||!sb)return;const who=pb.dataset.p;
+    const prev=e.paid_by||[];const next=prev.includes(who)?prev.filter(x=>x!==who):[...prev,who];e.paid_by=next;render();
+    const {error}=await sb.from("expenses").update({paid_by:next}).eq("id",e.id);
+    if(error){e.paid_by=prev;render();setSync("Couldn't update. Check your connection.");}
     return;}
   const b=ev.target.closest(".del");if(!b)return;const id=b.dataset.id;
   if(pendingDel!==id){pendingDel=id;render();setTimeout(()=>{if(pendingDel===id){pendingDel=null;render();}},4000);return;}
