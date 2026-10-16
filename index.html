@@ -51,7 +51,7 @@ h2{font-size:20px;font-weight:600}
 header{display:flex;flex-direction:column;gap:10px}
 .toprow{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
 .chip{display:inline-flex;align-items:center;gap:6px;background:var(--card);border:2px solid var(--line);border-radius:999px;padding:6px 12px;font-weight:700;font-size:13px}
-.chip input{width:64px;border:none;background:var(--soft);color:var(--ink);border-radius:8px;padding:3px 6px;font:inherit;text-align:right}
+.chip input#rate{width:72px;padding:3px 6px;font-size:14px;border:none;background:var(--soft);color:var(--ink);border-radius:8px;padding:3px 6px;font:inherit;text-align:right}
 .seg{display:inline-flex;background:var(--card);border:2px solid var(--line);border-radius:999px;padding:3px}
 .seg button{border:none;background:transparent;color:var(--muted);font:700 13px var(--body);padding:5px 12px;border-radius:999px;cursor:pointer}
 .seg button[aria-pressed="true"]{background:var(--accent);color:var(--accent-ink)}
@@ -99,7 +99,7 @@ header{display:flex;flex-direction:column;gap:10px}
 form{display:grid;gap:12px}
 .f2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
 @media (max-width:440px){.f2{grid-template-columns:1fr}}
-label.lbl{display:flex;flex-direction:column;gap:5px;font-size:12px;font-weight:800;text-transform:uppercase;letter-spacing:.8px;color:var(--muted);min-width:0}
+.lbl{display:flex;flex-direction:column;gap:5px;font-size:12px;font-weight:800;text-transform:uppercase;letter-spacing:.8px;color:var(--muted);min-width:0}
 input[type=text],input[type=number],input[type=date]{width:100%;font:600 16px var(--body);color:var(--ink);background:var(--bg);border:2px solid var(--line);border-radius:14px;padding:10px 12px}
 input:focus-visible,button:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
 .amtrow{display:flex;gap:8px}
@@ -114,7 +114,7 @@ input:focus-visible,button:focus-visible{outline:3px solid var(--accent);outline
 .err{color:var(--owe);font-weight:700;font-size:13px;margin:0}
 
 .tablewrap{overflow-x:auto;margin:10px -4px 0}
-table{width:100%;border-collapse:collapse;min-width:520px;font-size:14px}
+table{width:100%;border-collapse:collapse;min-width:560px;font-size:14px}
 th{font:600 13px var(--display);text-align:right;padding:8px 6px;border-bottom:2px solid var(--line);white-space:nowrap}
 th:first-child,td:first-child{text-align:left}
 th.c-pels{color:var(--pels)} th.c-hanting{color:var(--hanting)} th.c-shanice{color:var(--shanice)}
@@ -131,6 +131,22 @@ tfoot td{font-weight:800;border-bottom:none;border-top:2px solid var(--line);fon
 .resetactions{display:flex;gap:8px;flex-wrap:wrap}
 .resetyes{border:none;background:var(--owe);color:#fff;font:700 14px var(--body);padding:8px 14px;border-radius:12px;cursor:pointer}
 .resetno{border:2px solid var(--line);background:var(--card);color:var(--ink);font:700 14px var(--body);padding:6px 14px;border-radius:12px;cursor:pointer}
+.cats{display:flex;flex-direction:column;gap:7px;margin-top:14px;width:100%}
+.catrow{display:grid;grid-template-columns:118px 1fr auto;align-items:center;gap:10px;font-size:13.5px;font-weight:700}
+.catrow .bar{height:10px;border-radius:999px;background:var(--soft);overflow:hidden}
+.catrow .bar i{display:block;height:100%;border-radius:999px;background:var(--accent)}
+.catrow .v{color:var(--muted)}
+.catchip{display:inline-flex;align-items:center;gap:4px;background:var(--soft);border-radius:999px;padding:1px 8px;font-size:11.5px;font-weight:800;color:var(--ink);margin-right:4px}
+.filters{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px}
+.filters button{border:2px solid var(--line);background:var(--card);color:var(--muted);font:700 13px var(--body);padding:4px 11px;border-radius:999px;cursor:pointer}
+.filters button[aria-pressed="true"]{background:var(--ink);border-color:var(--ink);color:var(--bg)}
+.paidbtn{border:2px solid var(--owe);background:var(--owe-bg);color:var(--owe);font:800 12px var(--body);padding:4px 9px;border-radius:999px;cursor:pointer;white-space:nowrap}
+.paidbtn.on{border-color:var(--good);background:var(--good-bg);color:var(--good)}
+tr.isPaid td .item,tr.isPaid td .meta,tr.isPaid td.num{opacity:.55}
+.paidbtn{margin:4px 0}
+td:first-child{min-width:150px}
+tr.isPaid .item{text-decoration:line-through;text-decoration-color:var(--muted)}
+.settlenote{margin:6px 0 0;font-size:13px;color:var(--muted);font-weight:600}
 .del{border:none;background:transparent;color:var(--muted);cursor:pointer;font:700 12px var(--body);padding:2px 4px;border-radius:6px}
 .del:hover{color:var(--owe)}
 .del.confirm{background:var(--owe-bg);color:var(--owe)}
@@ -194,12 +210,14 @@ tfoot td{font-weight:800;border-bottom:none;border-top:2px solid var(--line);fon
       <div class="big num" id="grand">S$0.00</div>
     </div>
     <div class="sub num" id="grandAlt">฿0</div>
+    <div class="cats" id="cats"></div>
   </section>
 
   <section class="girls" id="girls"></section>
 
   <section class="panel settle">
     <h2>Settle up</h2>
+    <p class="settlenote" id="settleNote"></p>
     <ul id="settle"></ul>
   </section>
 
@@ -209,6 +227,9 @@ tfoot td{font-weight:800;border-bottom:none;border-top:2px solid var(--line);fon
       <label class="lbl" for="what">What was it?
         <input id="what" type="text" placeholder="Mango sticky rice, Grab to Siam…" autocomplete="off">
       </label>
+      <div class="lbl">Category
+        <div class="pickers" id="catPick"></div>
+      </div>
       <div class="f2">
         <label class="lbl" for="amount">Amount
           <div class="amtrow">
@@ -241,6 +262,7 @@ tfoot td{font-weight:800;border-bottom:none;border-top:2px solid var(--line);fon
       <p id="resetMsg">Delete every spend for everyone? This can't be undone.</p>
       <div class="resetactions"><button type="button" class="resetyes" id="resetYes">Yes, delete all</button><button type="button" class="resetno" id="resetNo">Cancel</button></div>
     </div>
+    <div class="filters" id="filters" role="group" aria-label="Show category"></div>
     <div class="tablewrap">
       <table>
         <thead><tr>
@@ -260,7 +282,9 @@ const GIRLS=[{id:"pels",name:"Pels"},{id:"hanting",name:"Hanting"},{id:"shanice"
 const DEFAULT_RATE=26.16; // mid-market 1 SGD → THB, 16 Oct 2026
 let state={rate:DEFAULT_RATE,expenses:[]};
 let show="SGD", cur="THB", payer=null, split=new Set(GIRLS.map(g=>g.id));
-let sb=null, pendingDel=null;
+let sb=null, pendingDel=null, cat="food", filter="all";
+const CATS=[{id:"food",name:"Food",icon:"🍜"},{id:"transport",name:"Transport",icon:"🛺"},{id:"accoms",name:"Accoms",icon:"🏨"},{id:"shopping",name:"Shopping",icon:"🛍️"},{id:"activities",name:"Activities",icon:"🎡"},{id:"others",name:"Others",icon:"✨"}];
+const catOf=id=>CATS.find(c=>c.id===id)||CATS[CATS.length-1];
 const SUPABASE_URL="https://fpqnjuuqayvfdrohxisu.supabase.co";
 const SUPABASE_KEY="sb_publishable_NXdx9ZMv2xFuN-AmuO4cKg_BDa_GIuz";
 const $=id=>document.getElementById(id);
@@ -275,15 +299,21 @@ const esc=s=>String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",
 
 function compute(){
   const paid={},share={};GIRLS.forEach(g=>{paid[g.id]=0;share[g.id]=0});
-  let total=0;
+  const bal={};GIRLS.forEach(g=>bal[g.id]=0);
+  const byCat={};CATS.forEach(c=>byCat[c.id]=0);
+  let total=0,unpaidN=0;
   for(const e of state.expenses){
-    const s=toSGD(e); total+=s;
+    const s=toSGD(e); total+=s; byCat[catOf(e.category).id]+=s;
     if(paid[e.payer]!==undefined) paid[e.payer]+=s;
     const who=(e.split&&e.split.length?e.split:GIRLS.map(g=>g.id)).filter(id=>share[id]!==undefined);
     who.forEach(id=>share[id]+=s/who.length);
+    if(!e.paid){
+      if(bal[e.payer]!==undefined) bal[e.payer]+=s;
+      who.forEach(id=>bal[id]-=s/who.length);
+      if(who.some(id=>id!==e.payer)) unpaidN++;
+    }
   }
-  const bal={};GIRLS.forEach(g=>bal[g.id]=paid[g.id]-share[g.id]);
-  return {paid,share,bal,total};
+  return {paid,share,bal,total,byCat,unpaidN};
 }
 function settle(bal){
   const cred=[],debt=[];
@@ -297,9 +327,11 @@ function settle(bal){
 const nameOf=id=>(GIRLS.find(g=>g.id===id)||{name:id}).name;
 
 function render(){
-  const {paid,share,bal,total}=compute();
+  const {paid,share,bal,total,byCat,unpaidN}=compute();
   if(document.activeElement!==$("rate")) $("rate").value=state.rate;
   $("grand").textContent=fmt(total); $("grandAlt").textContent=fmtAlt(total)+(show==="SGD"?" in baht":" in SGD");
+  const maxC=Math.max(...Object.values(byCat),0);
+  $("cats").innerHTML=CATS.filter(c=>byCat[c.id]>0).map(c=>`<div class="catrow"><span>${c.icon} ${c.name}</span><span class="bar"><i style="width:${(byCat[c.id]/maxC*100).toFixed(1)}%"></i></span><span class="v num">${fmt(byCat[c.id])}</span></div>`).join("");
   $("girls").innerHTML=GIRLS.map(g=>{
     const b=bal[g.id];const pill=Math.abs(b)<0.005?'<span class="pill even">All square</span>':b>0?`<span class="pill get">Gets back ${fmt(b)}</span>`:`<span class="pill owe">Owes ${fmt(-b)}</span>`;
     return `<article class="girl p-${g.id}"><svg class="kit k-${g.id}" aria-hidden="true"><use href="#kitten"/></svg><div class="name"><span class="dot">${g.name[0]}</span>${g.name}</div>
@@ -308,21 +340,28 @@ function render(){
   const s=settle(bal);
   $("settle").innerHTML=s.length?s.map(t=>`<li><span>${nameOf(t.from)}</span><span class="arrow">pays</span><span>${nameOf(t.to)}</span><span class="amt num">${fmt(t.v)}</span></li>`).join("")
     :`<p class="empty">${state.expenses.length?"Everyone is square. Cute.":"Nothing to settle yet. Add the first spend below."}</p>`;
-  const sorted=[...state.expenses].sort((a,b)=>(b.date||"").localeCompare(a.date||"")||(b.at||0)-(a.at||0));
+  $("settleNote").textContent=unpaidN?`Based on ${unpaidN} spend${unpaidN>1?"s":""} not paid back yet. Tap "Not paid" on a spend once it's settled.`:(state.expenses.length?"Every spend has been paid back.":"");
+  $("filters").innerHTML=[{id:"all",name:"All",icon:""},...CATS.filter(c=>byCat[c.id]>0)].map(c=>`<button type="button" data-id="${c.id}" aria-pressed="${filter===c.id}">${c.icon?c.icon+" ":""}${c.name}</button>`).join("");
+  if(filter!=="all"&&!(byCat[filter]>0))filter="all";
+  const shown=filter==="all"?state.expenses:state.expenses.filter(e=>catOf(e.category).id===filter);
+  const fpaid={};GIRLS.forEach(g=>fpaid[g.id]=0);let ftotal=0;shown.forEach(e=>{const v=toSGD(e);ftotal+=v;if(fpaid[e.payer]!==undefined)fpaid[e.payer]+=v;});
+  const sorted=[...shown].sort((a,b)=>(b.date||"").localeCompare(a.date||"")||(b.at||0)-(a.at||0));
   $("rows").innerHTML=sorted.length?sorted.map(e=>{
     const s=toSGD(e);const orig=e.currency==="THB"?fmtB(e.amount):fmtS(e.amount);
     const splitTxt=(e.split&&e.split.length&&e.split.length<GIRLS.length)?" · split: "+e.split.map(nameOf).join(", "):"";
     const cells=GIRLS.map(g=>g.id===e.payer?`<td class="num"><b>${fmt(s)}</b>${(e.currency!==show)?`<span class="orig">${orig}</span>`:""}</td>`:`<td></td>`).join("");
-    return `<tr><td><div class="item">${esc(e.what)}</div><div class="meta">${e.date?new Date(e.date+"T00:00").toLocaleDateString("en-SG",{day:"numeric",month:"short"}):""}${splitTxt}</div></td>${cells}
+    const c=catOf(e.category);
+    return `<tr class="${e.paid?"isPaid":""}"><td><div class="item">${esc(e.what)}</div><button type="button" class="paidbtn${e.paid?" on":""}" data-paid="${e.id}" aria-pressed="${!!e.paid}">${e.paid?"Paid back ✓":"Not paid"}</button><div class="meta"><span class="catchip">${c.icon} ${c.name}</span>${e.date?new Date(e.date+"T00:00").toLocaleDateString("en-SG",{day:"numeric",month:"short"}):""}${splitTxt}</div></td>${cells}
       <td class="num">${fmt(s)}</td><td><button class="del${pendingDel===e.id?" confirm":""}" data-id="${e.id}" type="button">${pendingDel===e.id?"Sure?":"✕"}</button></td></tr>`}).join("")
     :`<tr><td colspan="6" class="tabempty"><svg class="empty-kit k-hanting" aria-hidden="true"><use href="#kitten"/></svg>No spends yet. The first mango smoothie goes here.</td></tr>`;
-  $("foot").innerHTML=`<td>Total</td>${GIRLS.map(g=>`<td class="num">${fmt(paid[g.id])}</td>`).join("")}<td class="num">${fmt(total)}</td><td></td>`;
+  $("foot").innerHTML=`<td>${filter==="all"?"Total":catOf(filter).name+" total"}</td>${GIRLS.map(g=>`<td class="num">${fmt(fpaid[g.id])}</td>`).join("")}<td class="num">${fmt(ftotal)}</td><td></td>`;
   $("showSGD").setAttribute("aria-pressed",show==="SGD");$("showTHB").setAttribute("aria-pressed",show==="THB");
   renderForm();
 }
 function renderForm(){
   $("payer").innerHTML=GIRLS.map(g=>`<button type="button" class="pick p-${g.id}" data-id="${g.id}" aria-pressed="${payer===g.id}">${g.name}</button>`).join("");
   $("split").innerHTML=GIRLS.map(g=>`<button type="button" class="pick p-${g.id}" data-id="${g.id}" aria-pressed="${split.has(g.id)}">${g.name}</button>`).join("");
+  $("catPick").innerHTML=CATS.map(c=>`<button type="button" class="pick cur" data-id="${c.id}" aria-pressed="${cat===c.id}">${c.icon} ${c.name}</button>`).join("");
   $("curTHB").setAttribute("aria-pressed",cur==="THB");$("curSGD").setAttribute("aria-pressed",cur==="SGD");
   const a=parseFloat($("amount").value);
   if(a>0&&split.size){const sgd=cur==="SGD"?a:a/state.rate;
@@ -332,6 +371,8 @@ function renderForm(){
 
 $("payer").onclick=e=>{const b=e.target.closest("button");if(!b)return;payer=b.dataset.id;renderForm();};
 $("split").onclick=e=>{const b=e.target.closest("button");if(!b)return;const id=b.dataset.id;split.has(id)?split.delete(id):split.add(id);renderForm();};
+$("catPick").onclick=e=>{const b=e.target.closest("button");if(!b)return;cat=b.dataset.id;renderForm();};
+$("filters").onclick=e=>{const b=e.target.closest("button");if(!b)return;filter=b.dataset.id;render();};
 $("curTHB").onclick=()=>{cur="THB";renderForm()};$("curSGD").onclick=()=>{cur="SGD";renderForm()};
 $("amount").oninput=renderForm;
 $("showSGD").onclick=()=>{show="SGD";render()};$("showTHB").onclick=()=>{show="THB";render()};
@@ -345,7 +386,7 @@ $("form").onsubmit=async ev=>{
   const msg=!what?"Add what it was for.":!(amount>0)?"Enter an amount above 0.":!payer?"Tap who paid.":!split.size?"Pick at least one Freakie to split with.":"";
   if(msg){err.textContent=msg;err.hidden=false;return;}err.hidden=true;
   const e={id:"e"+Date.now().toString(36)+Math.random().toString(36).slice(2,6),what,amount:Math.round(amount*100)/100,currency:cur,payer,
-    split:GIRLS.map(g=>g.id).filter(id=>split.has(id)),date:$("date").value||today(),at:Date.now()};
+    split:GIRLS.map(g=>g.id).filter(id=>split.has(id)),category:cat,paid:false,date:$("date").value||today(),at:Date.now()};
   if(!sb){err.textContent="Not connected yet. Check your internet and reload.";err.hidden=false;return;}
   const {error}=await sb.from("expenses").insert(e);
   if(error){err.textContent="Couldn't save just now. Check your connection and try again.";err.hidden=false;return;}
@@ -353,6 +394,11 @@ $("form").onsubmit=async ev=>{
   $("what").value="";$("amount").value="";split=new Set(GIRLS.map(g=>g.id));render();$("what").focus();
 };
 $("rows").onclick=async ev=>{
+  const pb=ev.target.closest(".paidbtn");
+  if(pb){const e=state.expenses.find(x=>x.id===pb.dataset.paid);if(!e||!sb)return;const next=!e.paid;e.paid=next;render();
+    const {error}=await sb.from("expenses").update({paid:next}).eq("id",e.id);
+    if(error){e.paid=!next;render();setSync("Couldn't update. Check your connection.");}
+    return;}
   const b=ev.target.closest(".del");if(!b)return;const id=b.dataset.id;
   if(pendingDel!==id){pendingDel=id;render();setTimeout(()=>{if(pendingDel===id){pendingDel=null;render();}},4000);return;}
   pendingDel=null;
