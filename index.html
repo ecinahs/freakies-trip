@@ -94,6 +94,10 @@ header{display:flex;flex-direction:column;gap:10px}
 .settle li{display:flex;flex-wrap:wrap;align-items:center;gap:8px;background:var(--soft);border-radius:14px;padding:10px 12px;font-weight:700}
 .settle li .amt{margin-left:auto;font-family:var(--display);font-size:18px}
 .arrow{color:var(--muted)}
+.curgroup{margin-top:14px}
+.curgroup h3{font:600 15px var(--display);margin:0;color:var(--muted)}
+.curgroup .empty{margin-top:6px}
+.girl .pill+.pill{margin-top:-2px}
 .empty{color:var(--muted);font-weight:600;margin:8px 0 0}
 
 form{display:grid;gap:12px}
@@ -237,7 +241,7 @@ tr.isPaid .item{text-decoration:line-through;text-decoration-color:var(--muted)}
   <section class="panel settle">
     <h2>Settle up</h2>
     <p class="settlenote" id="settleNote"></p>
-    <ul id="settle"></ul>
+    <div id="settle"></div>
   </section>
 
   <section class="panel">
@@ -312,13 +316,16 @@ const $=id=>document.getElementById(id);
 const toSGD=e=>e.currency==="SGD"?e.amount:e.amount/state.rate;
 const fmtS=v=>"S$"+v.toLocaleString("en-SG",{minimumFractionDigits:2,maximumFractionDigits:2});
 const fmtB=v=>"฿"+Math.round(v).toLocaleString("en-SG");
+const fmtB2=v=>"฿"+v.toLocaleString("en-SG",{minimumFractionDigits:2,maximumFractionDigits:2});
+const fmtCur=(c,v)=>c==="SGD"?fmtS(v):fmtB2(v);
 const fmt=sgd=>show==="SGD"?fmtS(sgd):fmtB(sgd*state.rate);
 const fmtAlt=sgd=>show==="SGD"?fmtB(sgd*state.rate):fmtS(sgd);
 const esc=s=>String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
 
 function compute(){
   const paid={},share={};GIRLS.forEach(g=>{paid[g.id]=0;share[g.id]=0});
-  const bal={};GIRLS.forEach(g=>bal[g.id]=0);
+  // bal: per currency, in that currency (SGD spends settle in S$, THB spends settle in ฿)
+  const bal={SGD:{},THB:{}};GIRLS.forEach(g=>{bal.SGD[g.id]=0;bal.THB[g.id]=0});
   const byCat={};CATS.forEach(c=>byCat[c.id]=0);
   let total=0,unpaidN=0;
   for(const e of state.expenses){
@@ -326,16 +333,16 @@ function compute(){
     if(paid[e.payer]!==undefined) paid[e.payer]+=s;
     const who=(e.split&&e.split.length?e.split:GIRLS.map(g=>g.id)).filter(id=>share[id]!==undefined);
     who.forEach(id=>share[id]+=s/who.length);
-    const pb=e.paid_by||[];let open=false;
+    const pb=e.paid_by||[];let open=false;const cb=bal[e.currency==="SGD"?"SGD":"THB"],each=e.amount/who.length;
     who.forEach(id=>{if(id===e.payer||pb.includes(id))return;open=true;
-      if(bal[e.payer]!==undefined) bal[e.payer]+=s/who.length; bal[id]-=s/who.length;});
+      if(cb[e.payer]!==undefined) cb[e.payer]+=each; cb[id]-=each;});
     if(open) unpaidN++;
   }
   return {paid,share,bal,total,byCat,unpaidN};
 }
 function settle(bal){
   const cred=[],debt=[];
-  GIRLS.forEach(g=>{const b=Math.round(bal[g.id]*100)/100;if(b>0.004)cred.push({id:g.id,v:b});else if(b<-0.004)debt.push({id:g.id,v:-b});});
+  GIRLS.forEach(g=>{const b=bal[g.id];if(b>0.004)cred.push({id:g.id,v:b});else if(b<-0.004)debt.push({id:g.id,v:-b});});
   cred.sort((a,b)=>b.v-a.v);debt.sort((a,b)=>b.v-a.v);
   const out=[];let i=0,j=0;
   while(i<debt.length&&j<cred.length){const x=Math.min(debt[i].v,cred[j].v);out.push({from:debt[i].id,to:cred[j].id,v:x});
@@ -352,12 +359,14 @@ function render(){
   const maxC=Math.max(...Object.values(byCat),0);
   $("cats").innerHTML=CATS.filter(c=>byCat[c.id]>0).map(c=>`<div class="catrow"><span>${c.icon} ${c.name}</span><span class="bar"><i style="width:${(byCat[c.id]/maxC*100).toFixed(1)}%"></i></span><span class="v num">${fmt(byCat[c.id])}</span></div>`).join("");
   $("girls").innerHTML=GIRLS.map(g=>{
-    const b=bal[g.id];const pill=Math.abs(b)<0.005?'<span class="pill even">All square</span>':b>0?`<span class="pill get">Gets back ${fmt(b)}</span>`:`<span class="pill owe">Owes ${fmt(-b)}</span>`;
+    const pills=["SGD","THB"].map(c=>{const b=bal[c][g.id];return Math.abs(b)<0.005?"":b>0?`<span class="pill get">Gets back ${fmtCur(c,b)}</span>`:`<span class="pill owe">Owes ${fmtCur(c,-b)}</span>`;}).join("");
+    const pill=pills||'<span class="pill even">All square</span>';
     return `<article class="girl p-${g.id}"><svg class="kit k-${g.id}" aria-hidden="true"><use href="#kitten"/></svg><div class="name"><span class="dot">${g.name[0]}</span>${g.name}</div>
       <div class="row"><span>Paid out</span><b class="num">${fmt(paid[g.id])}</b></div>
       <div class="row"><span>Her share</span><b class="num">${fmt(share[g.id])}</b></div>${pill}</article>`}).join("");
-  const s=settle(bal);
-  $("settle").innerHTML=s.length?s.map(t=>`<li><span>${nameOf(t.from)}</span><span class="arrow">pays</span><span>${nameOf(t.to)}</span><span class="amt num">${fmt(t.v)}</span></li>`).join("")
+  const sc={SGD:settle(bal.SGD),THB:settle(bal.THB)};
+  $("settle").innerHTML=(sc.SGD.length||sc.THB.length)?[["SGD","Owed in SGD","S$"],["THB","Owed in THB","฿"]].map(([c,title])=>
+    `<div class="curgroup"><h3>${title}</h3>${sc[c].length?`<ul>${sc[c].map(t=>`<li><span>${nameOf(t.from)}</span><span class="arrow">owes</span><span>${nameOf(t.to)}</span><span class="amt num">${fmtCur(c,t.v)}</span></li>`).join("")}</ul>`:`<p class="empty">Nothing owed in ${c}.</p>`}</div>`).join("")
     :`<p class="empty">${state.expenses.length?"Everyone is square. Cute.":"Nothing to settle yet. Add the first spend below."}</p>`;
   $("settleNote").textContent=unpaidN?`Based on ${unpaidN} spend${unpaidN>1?"s":""} not paid back yet. Tap "Not paid" under someone's name once she's paid her share back.`:(state.expenses.length?"Every spend has been paid back.":"");
   $("filters").innerHTML=[{id:"all",name:"All",icon:""},...CATS.filter(c=>byCat[c.id]>0)].map(c=>`<button type="button" data-id="${c.id}" aria-pressed="${filter===c.id}">${c.icon?c.icon+" ":""}${c.name}</button>`).join("");
