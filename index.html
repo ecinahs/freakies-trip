@@ -94,7 +94,32 @@ header{display:flex;flex-direction:column;gap:10px}
 .settle li{display:flex;flex-wrap:wrap;align-items:center;gap:8px;background:var(--soft);border-radius:14px;padding:10px 12px;font-weight:700}
 .settle li .amt{margin-left:auto;font-family:var(--display);font-size:18px}
 .arrow{color:var(--muted)}
+.settle li.tr{display:block;padding:0}
+.trbtn{all:unset;box-sizing:border-box;width:100%;display:flex;flex-wrap:wrap;align-items:center;gap:8px;padding:10px 12px;cursor:pointer;border-radius:14px;font-weight:700}
+.trbtn:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+.trbtn .amt{margin-left:auto;font-family:var(--display);font-size:18px}
+.chev{color:var(--muted);transition:transform .15s}
+li.open .chev{transform:rotate(180deg)}
+.why{padding:0 12px 12px;font-weight:600;font-size:13.5px;display:flex;flex-direction:column;gap:10px}
+.whyblock{background:var(--card);border-radius:12px;padding:10px}
+.whyhead{display:flex;justify-content:space-between;gap:8px;font-weight:800;margin-bottom:4px}
+.settle .why ul{margin:0;gap:0}
+.settle .why ul li{display:flex;justify-content:space-between;align-items:flex-start;gap:10px;background:none;border-radius:0;padding:6px 0;border-top:1px dashed var(--line);font-weight:700}
+.wi{display:flex;flex-direction:column;min-width:0}
+.wi small{font-weight:600;color:var(--muted);font-size:12px}
+.whyrow{display:flex;justify-content:space-between;gap:10px;padding:0 2px}
+.whyrow span{color:var(--muted)}
+.whyrow b{white-space:nowrap}
+.whyrow.tot{border-top:2px solid var(--line);padding-top:8px;font-size:15px}
+.whyrow.tot span{color:var(--ink);font-weight:800}
 .curgroup{margin-top:14px}
+.curgroup.final{margin-top:20px;padding-top:14px;border-top:2px dashed var(--line)}
+.curgroup.final h3{color:var(--accent);font-size:18px;letter-spacing:1px}
+.curgroup.final .why{padding:8px 0 0;background:none}
+.curgroup.final .whyblock{background:var(--soft)}
+.curgroup.final>ul li{background:var(--accent);color:var(--accent-ink)}
+.curgroup.final>ul .arrow{color:inherit;opacity:.8}
+.whytext{margin:6px 0;font-weight:600;font-size:13.5px;line-height:1.5}
 .curgroup h3{font:600 15px var(--display);margin:0;color:var(--muted)}
 .curgroup .empty{margin-top:6px}
 .girl .pill+.pill{margin-top:-2px}
@@ -328,17 +353,19 @@ function compute(){
   const bal={SGD:{},THB:{}};GIRLS.forEach(g=>{bal.SGD[g.id]=0;bal.THB[g.id]=0});
   const byCat={};CATS.forEach(c=>byCat[c.id]=0);
   let total=0,unpaidN=0;
+  const lines={SGD:[],THB:[]}; // every open share: {e,from,to,v} in the spend's own currency
   for(const e of state.expenses){
     const s=toSGD(e); total+=s; byCat[catOf(e.category).id]+=s;
     if(paid[e.payer]!==undefined) paid[e.payer]+=s;
     const who=(e.split&&e.split.length?e.split:GIRLS.map(g=>g.id)).filter(id=>share[id]!==undefined);
     who.forEach(id=>share[id]+=s/who.length);
-    const pb=e.paid_by||[];let open=false;const cb=bal[e.currency==="SGD"?"SGD":"THB"],each=e.amount/who.length;
+    const pb=e.paid_by||[];let open=false;const ck=e.currency==="SGD"?"SGD":"THB",cb=bal[ck],each=e.amount/who.length;
     who.forEach(id=>{if(id===e.payer||pb.includes(id))return;open=true;
-      if(cb[e.payer]!==undefined) cb[e.payer]+=each; cb[id]-=each;});
+      if(cb[e.payer]!==undefined) cb[e.payer]+=each; cb[id]-=each;
+      lines[ck].push({e,from:id,to:e.payer,v:each});});
     if(open) unpaidN++;
   }
-  return {paid,share,bal,total,byCat,unpaidN};
+  return {paid,share,bal,total,byCat,unpaidN,lines};
 }
 function settle(bal){
   const cred=[],debt=[];
@@ -351,9 +378,64 @@ function settle(bal){
 }
 const settled=e=>{const who=(e.split&&e.split.length?e.split:GIRLS.map(g=>g.id)).filter(id=>id!==e.payer);return who.length>0&&who.every(id=>(e.paid_by||[]).includes(id));};
 const nameOf=id=>(GIRLS.find(g=>g.id===id)||{name:id}).name;
+const openWhy=new Set(); // which settle-up rows are expanded, kept across live refreshes
+function splitDesc(e){const w=(e.split&&e.split.length?e.split:GIRLS.map(g=>g.id));
+  return w.length===GIRLS.length?"split 3 ways":w.length===1?nameOf(w[0])+" only":"split "+w.map(nameOf).join(" + ");}
+// FINAL: each person's SGD balance + THB balance converted at the rate box (state.rate), then settled in SGD
+// "Why these payments?": pairwise debts (both currencies, in SGD), then the circle-cancel and pass-through shortcuts
+function finalWhyHTML(lines){
+  const R=state.rate,ids=GIRLS.map(g=>g.id),N=nameOf;
+  const sumL=(c,a,b)=>lines[c].filter(l=>l.from===a&&l.to===b).reduce((s,l)=>s+l.v,0);
+  const pairs=[],E=[];
+  for(let i=0;i<ids.length;i++)for(let j=i+1;j<ids.length;j++){const a=ids[i],b=ids[j];
+    const s=sumL("SGD",a,b)-sumL("SGD",b,a),t=sumL("THB",a,b)-sumL("THB",b,a),n=s+t/R;
+    if(Math.abs(n)<0.005&&Math.abs(s)<0.005&&Math.abs(t)<0.005)continue;
+    const [f,to]=n>=0?[a,b]:[b,a];
+    const part=(v,c)=>Math.abs(v)<0.005?"":`${c}: ${N(v>0?a:b)} owes ${c==="SGD"?fmtS(Math.abs(v)):fmtB2(Math.abs(v))+" ("+fmtS(Math.abs(v)/R)+")"}`;
+    pairs.push(`<li><span class="wi">${N(a)} and ${N(b)}<small>${[part(s,"SGD"),part(t,"Baht")].filter(Boolean).join(" · ")}</small></span><span class="num">${Math.abs(n)<0.005?"square":N(f)+" owes "+fmtS(Math.abs(n))}</span></li>`);
+    if(Math.abs(n)>=0.005)E.push({from:f,to,v:Math.abs(n)});}
+  if(!pairs.length)return "";
+  const steps=[];let e=E.map(x=>({...x}));
+  if(e.length===3&&new Set(e.map(x=>x.from)).size===3){
+    const cyc=[e[0].from];while(cyc.length<3)cyc.push(e.find(x=>x.from===cyc[cyc.length-1]).to);
+    const m=Math.min(...e.map(x=>x.v)),gone=e.find(x=>x.v===m);
+    steps.push(`These debts go in a circle: ${cyc.map(N).join(" → ")} → ${N(cyc[0])}. Taking ${fmtS(m)} off every step cancels ${N(gone.from)}'s debt to ${N(gone.to)}, and leaves ${e.filter(x=>x!==gone).map(x=>`${N(x.from)} owing ${N(x.to)} ${fmtS(x.v-m)}`).join(" and ")}.`);
+    e=e.filter(x=>x!==gone).map(x=>({...x,v:x.v-m})).filter(x=>x.v>=0.005);}
+  if(e.length===2){const mid=ids.find(id=>e.some(x=>x.to===id)&&e.some(x=>x.from===id));
+    if(mid){const inE=e.find(x=>x.to===mid),outE=e.find(x=>x.from===mid),A=N(inE.from),B=N(mid),C=N(outE.to),x=inE.v,y=outE.v;
+      steps.push(x<=y?`${B} would collect ${fmtS(x)} from ${A} and pass it straight on to ${C}. So ${A} pays ${C} directly, and ${B} only pays ${C} the remaining ${fmtS(y-x)}.`
+                     :`${B} would collect ${fmtS(x)} from ${A} but pass ${fmtS(y)} of it on to ${C}. So ${A} pays ${C} that ${fmtS(y)} directly, and pays ${B} only the remaining ${fmtS(x-y)}.`);}}
+  steps.push(steps.length>0?"Everyone ends up in the same place either way, just with fewer payments.":"No shortcut needed: these are already the fewest payments.");
+  return `<div class="whyblock"><div class="whyhead"><span>Why these payments?</span></div><p class="whytext">Between each pair, after netting SGD and baht (baht at ฿${R}):</p><ul>${pairs.join("")}</ul>${steps.map(s=>`<p class="whytext">${s}</p>`).join("")}</div>`;
+}
+function finalHTML(bal,sc,lines){
+  const fb={};GIRLS.forEach(g=>fb[g.id]=bal.SGD[g.id]+bal.THB[g.id]/state.rate);
+  const ft=settle(fb);
+  const sgnS=v=>(v<0?"−":"+")+fmtS(Math.abs(v));
+  const conv=sc.THB.length?`<div class="whyblock"><div class="whyhead"><span>Baht debts in SGD</span></div><ul>${sc.THB.map(t=>`<li><span class="wi">${nameOf(t.from)} owes ${nameOf(t.to)}<small>${fmtB2(t.v)} ÷ ${state.rate}</small></span><span class="num">${fmtS(t.v/state.rate)}</span></li>`).join("")}</ul></div>`:"";
+  const per=`<div class="whyblock"><div class="whyhead"><span>Each person, SGD + converted baht</span></div><ul>${GIRLS.map(g=>{const s=bal.SGD[g.id],b=bal.THB[g.id]/state.rate,n=fb[g.id];
+    return `<li><span class="wi">${g.name}<small>${sgnS(s)} SGD ${sgnS(b)} from baht</small></span><span class="num">${Math.abs(n)<0.005?"square":n>0?"gets back "+fmtS(n):"owes "+fmtS(-n)}</span></li>`;}).join("")}</ul></div>`;
+  return `<div class="curgroup final"><h3>FINAL</h3><p class="settlenote">Everything in SGD. Baht converted at the rate set at the top, 1 SGD = ฿${state.rate}.</p>
+    <div class="why">${conv}${per}</div>
+    ${ft.length?`<ul>${ft.map(t=>`<li><span>${nameOf(t.from)}</span><span class="arrow">pays</span><span>${nameOf(t.to)}</span><span class="amt num">${fmtS(t.v)}</span></li>`).join("")}</ul>`:`<p class="empty">Everyone is square.</p>`}
+    <div class="why">${finalWhyHTML(lines)}</div></div>`;
+}
+function whyHTML(c,t,lines){
+  const A=t.from,B=t.to,C=GIRLS.map(g=>g.id).find(id=>id!==A&&id!==B);
+  const ab=lines.filter(l=>l.from===A&&l.to===B),ba=lines.filter(l=>l.from===B&&l.to===A);
+  const sum=a=>a.reduce((s,l)=>s+l.v,0),net=sum(ab)-sum(ba),d=t.v-net;
+  const list=(title,arr)=>arr.length?`<div class="whyblock"><div class="whyhead"><span>${title}</span><b class="num">${fmtCur(c,sum(arr))}</b></div><ul>${
+    [...arr].sort((x,y)=>(x.e.date||"").localeCompare(y.e.date||"")).map(l=>`<li><span class="wi">${esc(l.e.what)}<small>${l.e.date?new Date(l.e.date+"T00:00").toLocaleDateString("en-SG",{day:"numeric",month:"short"})+" · ":""}${fmtCur(c,l.e.amount)} ${splitDesc(l.e)}, ${nameOf(l.e.payer)} paid</small></span><span class="num">${fmtCur(c,l.v)}</span></li>`).join("")}</ul></div>`:"";
+  let h=list(`What ${nameOf(A)} owes ${nameOf(B)}`,ab)+list(`What ${nameOf(B)} owes ${nameOf(A)}`,ba);
+  h+=`<div class="whyrow"><span>Between ${nameOf(A)} and ${nameOf(B)}</span><b class="num">${net>=-0.005?`${nameOf(A)} owes ${fmtCur(c,Math.max(net,0))}`:`${nameOf(B)} owes ${fmtCur(c,-net)}`}</b></div>`;
+  if(Math.abs(d)>=0.01&&C){
+    h+=d>0?`<div class="whyrow"><span>+ ${nameOf(C)}'s debt to ${nameOf(B)}, which ${nameOf(A)} pays on ${nameOf(C)}'s behalf (it's balanced out between ${nameOf(A)} and ${nameOf(C)})</span><b class="num">+${fmtCur(c,d)}</b></div>`
+          :`<div class="whyrow"><span>− ${nameOf(B)}'s debt to ${nameOf(C)}, which ${nameOf(A)} pays straight to ${nameOf(C)} instead</span><b class="num">−${fmtCur(c,-d)}</b></div>`;}
+  return h+`<div class="whyrow tot"><span>${nameOf(A)} pays ${nameOf(B)}</span><b class="num">${fmtCur(c,t.v)}</b></div>`;
+}
 
 function render(){
-  const {paid,share,bal,total,byCat,unpaidN}=compute();
+  const {paid,share,bal,total,byCat,unpaidN,lines}=compute();
   if(document.activeElement!==$("rate")) $("rate").value=state.rate;
   $("grand").textContent=fmt(total); $("grandAlt").textContent=fmtAlt(total)+(show==="SGD"?" in baht":" in SGD");
   const maxC=Math.max(...Object.values(byCat),0);
@@ -366,7 +448,8 @@ function render(){
       <div class="row"><span>Her share</span><b class="num">${fmt(share[g.id])}</b></div>${pill}</article>`}).join("");
   const sc={SGD:settle(bal.SGD),THB:settle(bal.THB)};
   $("settle").innerHTML=(sc.SGD.length||sc.THB.length)?[["SGD","Owed in SGD","S$"],["THB","Owed in THB","฿"]].map(([c,title])=>
-    `<div class="curgroup"><h3>${title}</h3>${sc[c].length?`<ul>${sc[c].map(t=>`<li><span>${nameOf(t.from)}</span><span class="arrow">owes</span><span>${nameOf(t.to)}</span><span class="amt num">${fmtCur(c,t.v)}</span></li>`).join("")}</ul>`:`<p class="empty">Nothing owed in ${c}.</p>`}</div>`).join("")
+    `<div class="curgroup"><h3>${title}</h3>${sc[c].length?`<ul>${sc[c].map(t=>{const k=c+":"+t.from+":"+t.to,o=openWhy.has(k);
+      return `<li class="tr${o?" open":""}"><button type="button" class="trbtn" data-k="${k}" aria-expanded="${o}"><span>${nameOf(t.from)}</span><span class="arrow">owes</span><span>${nameOf(t.to)}</span><span class="amt num">${fmtCur(c,t.v)}</span><span class="chev" aria-hidden="true">▾</span></button>${o?`<div class="why">${whyHTML(c,t,lines[c])}</div>`:""}</li>`;}).join("")}</ul>`:`<p class="empty">Nothing owed in ${c}.</p>`}</div>`).join("")+finalHTML(bal,sc,lines)
     :`<p class="empty">${state.expenses.length?"Everyone is square. Cute.":"Nothing to settle yet. Add the first spend below."}</p>`;
   $("settleNote").textContent=unpaidN?`Based on ${unpaidN} spend${unpaidN>1?"s":""} not paid back yet. Tap "Not paid" under someone's name once she's paid her share back.`:(state.expenses.length?"Every spend has been paid back.":"");
   $("filters").innerHTML=[{id:"all",name:"All",icon:""},...CATS.filter(c=>byCat[c.id]>0)].map(c=>`<button type="button" data-id="${c.id}" aria-pressed="${filter===c.id}">${c.icon?c.icon+" ":""}${c.name}</button>`).join("");
@@ -405,6 +488,7 @@ function renderForm(){
 $("payer").onclick=e=>{const b=e.target.closest("button");if(!b)return;payer=b.dataset.id;renderForm();};
 $("split").onclick=e=>{const b=e.target.closest("button");if(!b)return;const id=b.dataset.id;split.has(id)?split.delete(id):split.add(id);renderForm();};
 $("catPick").onclick=e=>{const b=e.target.closest("button");if(!b)return;cat=b.dataset.id;renderForm();};
+$("settle").onclick=e=>{const b=e.target.closest(".trbtn");if(!b)return;const k=b.dataset.k;openWhy.has(k)?openWhy.delete(k):openWhy.add(k);render();};
 $("filters").onclick=e=>{const b=e.target.closest("button");if(!b)return;filter=b.dataset.id;render();};
 $("curTHB").onclick=()=>{cur="THB";renderForm()};$("curSGD").onclick=()=>{cur="SGD";renderForm()};
 $("amount").oninput=renderForm;
